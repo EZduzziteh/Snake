@@ -13,6 +13,34 @@ public class Tile : MonoBehaviour
 
     public bool isOccupied = false;
 
+    public Food food;
+
+    public void SetFood(Food _food)
+    {
+        food = _food;
+    }
+    
+    public void ClearFood()
+    {
+        //move food to new tile
+        food.MoveToNewTile();
+        isOccupied = false;
+        //clear the food from tile
+        food = null;
+    }
+
+    public bool CheckHasFood()
+    {
+        if (food != null)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
   
     Tile GetAdjacentTile(Enum_Direction.direction direction)
     {

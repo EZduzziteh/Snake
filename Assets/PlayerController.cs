@@ -19,7 +19,10 @@ public class PlayerController : MonoBehaviour
     {
         if (Input.anyKeyDown)
         {
+            
             controlledSnake.Respawn();
+           
+          
             
         }
 

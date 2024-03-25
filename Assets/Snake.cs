@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using static Enum_Direction;
 
@@ -12,29 +14,58 @@ public class Snake : MonoBehaviour
     direction currentMovingDirection = direction.down;
     float timeSinceLastMove = 0.0f;
 
+    bool CanMove = true;
+
     Tile currentTile;
     bool isAlive = false;
 
     [SerializeField]
+    Snake_Body snakeBodyPrefab;
+
+    [SerializeField]
     Color snakeColor = Color.blue;
-    // Start is called before the first frame update
-    void Start()
-    {
-    }
+
+    public bool moveInProgress = false;
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
-       
-
         if (isAlive)
         {
-            timeSinceLastMove += Time.deltaTime;
+            if (CanMove)
+            {
+                StartCoroutine(HandleMove());
+            }
+           /* timeSinceLastMove += Time.deltaTime;
             if (timeSinceLastMove >= timeBetweenMoves)
             {
                 Move();
-            }
+            }*/
         }
+    }
+
+    IEnumerator HandleMove()
+    {
+        CanMove = false;
+        yield return new WaitForSeconds(timeBetweenMoves);
+        Move();
+        CanMove = true;
+
+    }
+
+
+    public void Grow()
+    {
+        Debug.Log("growing");
+        Snake_Body newBody = GameObject.Instantiate(snakeBodyPrefab);
+        
+        //set new body part to the location we are currently at
+        snakeBody.Add(newBody);
+        newBody.transform.position = transform.position;
+        newBody.currentTile = currentTile;
+        //create new snake body
+        //add to snake body list
+
     }
 
     public void Die()
@@ -51,37 +82,41 @@ public class Snake : MonoBehaviour
                 currentTile.isOccupied = false;
             }
 
-            currentTile = FindAnyObjectByType<Locations>().getStartTile();
+            currentTile = FindAnyObjectByType<Locations>().GetStartTile();
             transform.position = currentTile.transform.position;
             currentTile.isOccupied = true;
             Debug.Log("start");
             isAlive = true;
+
+
+            // move all foods to different tiles
+            foreach(var f in FindObjectsOfType<Food>())
+            {
+                f.MoveToNewTile();
+            }
+
+            
+
         }
     }
 
     public void Move()
     {
+       
+        if (moveInProgress)
+        {
+            return;
+        }
+        moveInProgress = true;
         if (isAlive) { 
             if (currentTile)
             {
-                if (snakeBody.Count <= 0)
-                {
-
-                    currentTile.isOccupied = false;
-                }
-
-                ////start at the rear: move to equal the position of the next,
-                //when we reach the front, move based on current direction.
-                //
-
-
                 switch (currentMovingDirection)
                 {
                     case direction.up:
                         if (currentTile.tile_up)
                         {
-                            currentTile = currentTile.tile_up;
-                            transform.position = currentTile.transform.position;
+                            HandleMovement(currentTile.tile_up);
                         }
                         else
                         {
@@ -91,10 +126,9 @@ public class Snake : MonoBehaviour
                     case direction.down:
                         if (currentTile.tile_down)
                         {
-                            currentTile = currentTile.tile_down;
-                            transform.position = currentTile.transform.position;
+                            HandleMovement(currentTile.tile_down);
                         }
-                        else
+                        else //if no tile, die
                         {
                             Die();
                         }
@@ -102,10 +136,9 @@ public class Snake : MonoBehaviour
                     case direction.left:
                         if (currentTile.tile_left)
                         {
-                            currentTile = currentTile.tile_left;
-                            transform.position = currentTile.transform.position;
+                            HandleMovement(currentTile.tile_left);
                         }
-                        else
+                        else //if no tile, die
                         {
                             Die();
                         }
@@ -113,10 +146,9 @@ public class Snake : MonoBehaviour
                     case direction.right:
                         if (currentTile.tile_right)
                         {
-                            currentTile = currentTile.tile_right;
-                            transform.position = currentTile.transform.position;
+                            HandleMovement(currentTile.tile_right);
                         }
-                        else
+                        else //if no tile, die
                         {
                             Die();
                         }
@@ -124,23 +156,81 @@ public class Snake : MonoBehaviour
                 }
 
                 timeSinceLastMove = 0;
-
-
             }
             else
             {
                 Debug.LogError("No current Tile");
                 return;
             }
-            
+        }
+
+        
+        moveInProgress = false;
+    }
+
+    private void HandleMovement(Tile newTile)
+    {
+      
+
+        if (newTile.isOccupied)
+        {
+            Die();
+        }
+        else //free to move
+        {
+            //if food, grow
+            if (newTile.CheckHasFood())
+            {
+                //free to move, consume food
+                newTile.ClearFood();
+                //become larger
+                Grow();
+            }
 
 
-           
+            //then move
+            ////start at the rear: move to equal the position of the next,
+            //when we reach the front, move based on current direction.
+            //
+            if (snakeBody.Count > 0)
+            {
 
+                for (int i = snakeBody.Count - 1; i >= 0; i--)
+                {
+                    //first element iwil follow snake head, so move that last. 
+                    if (i == 0)
+                    {
+                        snakeBody[i].gameObject.transform.position = currentTile.transform.position;
+                        snakeBody[i].currentTile = currentTile;
+                    }
+                    else
+                    {
+                        
+                        
+                        //if the tail, set current tile to unoccupied
+                        if (i == snakeBody.Count - 1)
+                        {
+                            snakeBody[i].currentTile.isOccupied = false;
+                        }
+                        //get the snakebody ahead of it, and it move to that location to move like a "train"
+                        snakeBody[i].transform.position = snakeBody[i - 1].transform.position;
 
-            
+                        //set current tile to the next body elements tile.
+                        snakeBody[i].currentTile = snakeBody[i - 1].currentTile;
 
-            
+                    }
+                }
+            }
+            else
+            {
+                //if we have no body, set the old tile to unoccupied first
+                currentTile.isOccupied = false;
+            }
+
+            //then move snake head
+            currentTile = newTile;
+            transform.position = currentTile.transform.position;
+
         }
     }
 

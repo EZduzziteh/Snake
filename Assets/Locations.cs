@@ -20,10 +20,30 @@ public class Locations : MonoBehaviour
     [SerializeField]
     Tile tile;
 
-    public Tile getStartTile()
+    public Tile GetStartTile()
     {
         //return the center tile
         return gridColumns[gridSizeY / 2][gridSizeX / 2];
+    }
+
+    public Tile GetRandomUnoccupiedTile()
+    {
+        int maxAttempts = gridSizeX * gridSizeY * 2;
+        while (maxAttempts > 0)
+        {
+            int randomY = Random.Range(0, gridSizeY - 1);
+            int randomX = Random.Range(0, gridSizeX - 1);
+
+            if (gridColumns[randomY][randomX].isOccupied == false)
+            {
+                Debug.Log("found tile"+ gridColumns[randomY][randomX].gameObject.name);
+                return gridColumns[randomY][randomX];
+            }
+            maxAttempts --;
+        }
+        //if we cant find a tile after a certain amount of tries, return null. 
+
+        return null;
     }
 
     void Start()
@@ -38,7 +58,7 @@ public class Locations : MonoBehaviour
                 //create world point
                 Vector2 newPoint = new Vector2(i * spaceBetween, j * spaceBetween);
                 Tile temp = GameObject.Instantiate(tile, new Vector3(newPoint.x, newPoint.y, 0), Quaternion.identity);
-
+                temp.name = "X: "+i+", Y: "+j;
                 gridRow.Add(temp);
                 
             }
