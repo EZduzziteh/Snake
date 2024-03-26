@@ -7,45 +7,39 @@ using static Enum_Direction;
 
 public class Snake : MonoBehaviour
 {
-    public
-    List<Snake_Body> snakeBody = new List<Snake_Body>();
+
+    //Set these in Editor
     [SerializeField]
     float timeBetweenMoves = 1.0f;
-   
-    direction currentMovingDirection = direction.down;
-    direction desiredDirection = direction.down;
-    float timeSinceLastMove = 0.0f;
-
-    bool CanMove = true;
-
-    Tile currentTile;
-    bool isAlive = false;
 
     [SerializeField]
     Snake_Body snakeBodyPrefab;
 
-    [SerializeField]
-    Color snakeColor = Color.blue;
 
-
-    PlayerController controller;
-
-
+    //Movement
+    direction currentMovingDirection = direction.down;
+    direction desiredDirection = direction.down;
+    bool CanMove = true;
+    Tile currentTile;
     public bool moveInProgress = false;
 
 
-    public void OccupyAllTiles()
-    {
-        currentTile.isOccupied = true;
-        foreach(var body in snakeBody)
-        {
-            body.currentTile.isOccupied = true;
-        }
-    }
+    //Status
+    public bool isAlive = false;
+    public bool isAiControlled = false;
+
+    //References
+    PlayerController controller;
+    Locations location;
+
+    public List<Snake_Body> snakeBody = new List<Snake_Body>();
+    public List<Tile> path;
+
 
     private void Start()
     {
         controller = GetComponent<PlayerController>();
+        location = FindObjectOfType<Locations>();
     }
 
     // Update is called once per frame
@@ -57,23 +51,113 @@ public class Snake : MonoBehaviour
             {
                 StartCoroutine(HandleMove());
             }
-           /* timeSinceLastMove += Time.deltaTime;
-            if (timeSinceLastMove >= timeBetweenMoves)
-            {
-                Move();
-            }*/
+        }
+    }
+
+    public void OccupyAllTiles()
+    {
+        currentTile.isOccupied = true;
+        foreach (var body in snakeBody)
+        {
+            body.currentTile.isOccupied = true;
         }
     }
 
     IEnumerator HandleMove()
     {
+       
         CanMove = false;
         yield return new WaitForSeconds(timeBetweenMoves);
-        Move();
-        CanMove = true;
+        if (isAiControlled)
+        {
+            AIMove();
 
+        }
+        else
+        {
+            Move();
+        }
+        CanMove = true;
+        location.Fixup();
+        
     }
 
+    private void AIMove()
+    {
+        if (moveInProgress)
+        {
+            return;
+        }
+
+
+        if (path.Count <= 0)
+        {
+            GetNewAIPath();
+            return;
+
+        }
+
+
+        //find out what direction to go for the next Djikstra path
+
+        moveInProgress = true;
+
+        
+        
+        if(currentTile.tile_down == path[0])
+        {
+
+            UnityEngine.Color hexColor;
+            UnityEngine.ColorUtility.TryParseHtmlString("#785757", out hexColor);
+            path[0].GetComponent<SpriteRenderer>().color = hexColor;
+            path.Remove(path[0]);
+
+            HandleMovement(currentTile.tile_down);
+            moveInProgress = false;
+            return;
+        }
+        else if(currentTile.tile_left == path[0])
+        {
+            UnityEngine.Color hexColor;
+            UnityEngine.ColorUtility.TryParseHtmlString("#785757", out hexColor);
+            path[0].GetComponent<SpriteRenderer>().color = hexColor;
+            path.Remove(path[0]);
+            HandleMovement(currentTile.tile_left);
+            moveInProgress = false;
+            return;
+        }
+        else if(currentTile.tile_right == path[0])
+        {
+            UnityEngine.Color hexColor;
+            UnityEngine.ColorUtility.TryParseHtmlString("#785757", out hexColor);
+            path[0].GetComponent<SpriteRenderer>().color = hexColor;
+            path.Remove(path[0]);
+            HandleMovement(currentTile.tile_right);
+            moveInProgress = false;
+            return;
+
+        }
+        else if(currentTile.tile_up == path[0])
+        {
+            UnityEngine.Color hexColor;
+            UnityEngine.ColorUtility.TryParseHtmlString("#785757", out hexColor);
+            path[0].GetComponent<SpriteRenderer>().color = hexColor;
+            path.Remove(path[0]);
+            HandleMovement(currentTile.tile_up);
+            moveInProgress = false;
+            return;
+        }
+        else
+        {
+            Debug.LogError("no current tile or no path");
+            moveInProgress = false;
+            return;
+        }
+         
+
+
+        
+    }
 
     public void Grow()
     {
@@ -84,8 +168,12 @@ public class Snake : MonoBehaviour
         snakeBody.Add(newBody);
         newBody.transform.position = transform.position;
         newBody.currentTile = currentTile;
+        newBody.currentTile.isOccupied = true;
         //create new snake body
         //add to snake body list
+
+
+       
 
     }
 
@@ -97,21 +185,18 @@ public class Snake : MonoBehaviour
         }
     }
 
-    public void Respawn()
+    public void StartPlayer()
     {
         if (!isAlive)
         {
             if (currentTile)
             {
                 currentTile.isOccupied = false;
-                Debug.Log(currentTile.name + " unoccupied");
             }
 
             currentTile = FindAnyObjectByType<Locations>().GetStartTile();
             transform.position = currentTile.transform.position;
             currentTile.isOccupied = true;
-            Debug.Log(currentTile.name + " ccupied");
-            Debug.Log("start");
             isAlive = true;
 
 
@@ -120,8 +205,6 @@ public class Snake : MonoBehaviour
             {
                 f.MoveToNewTile();
             }
-
-            
 
         }
     }
@@ -182,8 +265,6 @@ public class Snake : MonoBehaviour
                         }
                         break;
                 }
-
-                timeSinceLastMove = 0;
             }
             else
             {
@@ -214,6 +295,7 @@ public class Snake : MonoBehaviour
                 newTile.ClearFood();
                 //become larger
                 Grow();
+
             }
 
 
@@ -284,19 +366,60 @@ public class Snake : MonoBehaviour
         }
 
 
+    }
 
-        
+    private void GetNewAIPath()
+    {
+        path = location.GetTilePathViaDjikstra(currentTile, FindObjectOfType<Food>().GetCurrentTile());
 
+        //color first element as its been traversed
+        UnityEngine.Color hexColor;
+        UnityEngine.ColorUtility.TryParseHtmlString("#785757", out hexColor);
+        path[0].GetComponent<SpriteRenderer>().color = hexColor;
+        //remove first element as its where we started
+        path.Remove(path[0]);
+
+        foreach (var tile in path)
+        {
+            tile.GetComponent<SpriteRenderer>().color = UnityEngine.Color.red;
+        }
     }
 
     public void ChangeDirection(direction newDirection)
     {
         //set current direction to desired direction
-       // currentMovingDirection = newDirection;
+        // currentMovingDirection = newDirection;
+
+
         desiredDirection = newDirection;
         Debug.Log("changed direction");
     }
-    
 
-    
+    public direction GetCurrentDirection()
+    {
+        return currentMovingDirection;
+    }
+
+   
+
+    public void StartAI()
+    {
+        if (isAiControlled)
+        {
+            currentTile = currentTile = FindAnyObjectByType<Locations>().GetStartTile(); 
+            transform.position = currentTile.transform.position;
+            currentTile.isOccupied = true;
+            isAlive = true;
+            
+            // move all foods to different tiles
+            foreach (var f in FindObjectsOfType<Food>())
+            {
+                f.MoveToNewTile();
+            }
+
+            GetNewAIPath();
+        }
+    }
+
+   
 }

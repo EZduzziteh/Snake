@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -11,7 +12,10 @@ public class PlayerController : MonoBehaviour
     Snake controlledSnake;
 
     public GameObject GameOverPanel;
-    
+
+    Tile nextTile;
+
+
 
 
     // Start is called before the first frame update
@@ -23,32 +27,65 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.anyKeyDown)
+
+        if(controlledSnake.isAlive == false)
         {
-            
-            controlledSnake.Respawn();
-            GameOverPanel.SetActive(false);
-          
-            
+            if (Input.anyKeyDown)
+            {
+                if (controlledSnake.isAiControlled)
+                {
+                    controlledSnake.StartAI();
+                }
+                else
+                {
+                    controlledSnake.StartPlayer();
+                }
+                GameOverPanel.SetActive(false);
+            }
         }
+        if (controlledSnake.isAiControlled)
+        {
+           
+        }
+        else
+        {
 
-        if (controlledSnake) {
-            if (Input.GetKeyDown(KeyCode.W))
+            if (controlledSnake)
             {
-                controlledSnake.ChangeDirection(Enum_Direction.direction.up);
+                if (Input.GetKeyDown(KeyCode.W))
+                {
+                    //disallow 180 degree movement
+                    if (controlledSnake.GetCurrentDirection() != Enum_Direction.direction.down)
+                    {
+                        controlledSnake.ChangeDirection(Enum_Direction.direction.up);
+                    }
 
-            } else if (Input.GetKeyDown(KeyCode.S))
-            {
-                controlledSnake.ChangeDirection(Enum_Direction.direction.down);
-
-            } else if (Input.GetKeyDown(KeyCode.A))
-            {
-                controlledSnake.ChangeDirection(Enum_Direction.direction.left);
-
-            } else if (Input.GetKeyDown(KeyCode.D))
-            {
-                controlledSnake.ChangeDirection(Enum_Direction.direction.right);
-            }  
+                }
+                else if (Input.GetKeyDown(KeyCode.S))
+                {
+                    //disallow 180 degree movement
+                    if (controlledSnake.GetCurrentDirection() != Enum_Direction.direction.up)
+                    {
+                        controlledSnake.ChangeDirection(Enum_Direction.direction.down);
+                    }
+                }
+                else if (Input.GetKeyDown(KeyCode.A))
+                {
+                    //disallow 180 degree movement
+                    if (controlledSnake.GetCurrentDirection() != Enum_Direction.direction.right)
+                    {
+                        controlledSnake.ChangeDirection(Enum_Direction.direction.left);
+                    }
+                }
+                else if (Input.GetKeyDown(KeyCode.D))
+                {
+                    //disallow 180 degree movement
+                    if (controlledSnake.GetCurrentDirection() != Enum_Direction.direction.left)
+                    {
+                        controlledSnake.ChangeDirection(Enum_Direction.direction.right);
+                    }
+                }
+            }
         }
 
     }

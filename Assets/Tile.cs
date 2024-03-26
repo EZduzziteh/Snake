@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,9 +11,7 @@ public class Tile : MonoBehaviour
     public Tile tile_down;
     public Tile tile_left;
     public Tile tile_right;
-
     public bool isOccupied = false;
-
     public Food food;
 
     public void SetFood(Food _food)
@@ -71,8 +70,31 @@ public class Tile : MonoBehaviour
                 }
                 break;
         }
-
-
         return null;
+    }
+
+    internal List<Tile> GetAllAdjacentTiles()
+    {
+        
+        List<Tile> adjacent = new List<Tile> ();
+
+        if (tile_up != null)
+        {
+            adjacent.Add(tile_up);
+        }
+        if (tile_down != null)
+        {
+            adjacent.Add(tile_down);
+        }
+        if (tile_left != null)
+        {
+            adjacent.Add(tile_left);
+        }
+        if (tile_right != null)
+        {
+            adjacent.Add(tile_right);
+        }
+
+        return adjacent;
     }
 }
