@@ -18,7 +18,30 @@ public class Locations : MonoBehaviour
     List<List<Tile>> gridColumns = new List<List<Tile>>();
 
     [SerializeField]
+    
+    
+    
     Tile tile;
+
+    public void Fixup()
+    {
+
+        //first set all tiles to not occupied
+        for (int i = 0; i < gridSizeY; i++)
+        {
+            for (int j = 0; j < gridSizeX; j++)
+            {
+                gridColumns[i][j].isOccupied = false;
+            }
+        }
+
+        foreach (var snake in FindObjectsOfType<Snake>())
+        {
+            //force snakes to occupy their tiles
+            snake.OccupyAllTiles();
+        }
+    }
+
 
     public Tile GetStartTile()
     {
@@ -128,6 +151,10 @@ public class Locations : MonoBehaviour
 
             }
         }
+
+
+        //set camera to be in the middle of the board we just generated
+        Camera.main.transform.position = new Vector3(gridSizeX / 2 * spaceBetween, gridSizeY / 2 * spaceBetween, Camera.main.transform.position.z );
 
       
     }

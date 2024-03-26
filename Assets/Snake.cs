@@ -7,11 +7,13 @@ using static Enum_Direction;
 
 public class Snake : MonoBehaviour
 {
+    public
     List<Snake_Body> snakeBody = new List<Snake_Body>();
     [SerializeField]
     float timeBetweenMoves = 1.0f;
    
     direction currentMovingDirection = direction.down;
+    direction desiredDirection = direction.down;
     float timeSinceLastMove = 0.0f;
 
     bool CanMove = true;
@@ -25,7 +27,26 @@ public class Snake : MonoBehaviour
     [SerializeField]
     Color snakeColor = Color.blue;
 
+
+    PlayerController controller;
+
+
     public bool moveInProgress = false;
+
+
+    public void OccupyAllTiles()
+    {
+        currentTile.isOccupied = true;
+        foreach(var body in snakeBody)
+        {
+            body.currentTile.isOccupied = true;
+        }
+    }
+
+    private void Start()
+    {
+        controller = GetComponent<PlayerController>();
+    }
 
     // Update is called once per frame
     void FixedUpdate()
@@ -70,7 +91,10 @@ public class Snake : MonoBehaviour
 
     public void Die()
     {
-        Debug.Log("dead");
+        if (controller)
+        {
+            controller.Die();
+        }
     }
 
     public void Respawn()
@@ -80,11 +104,13 @@ public class Snake : MonoBehaviour
             if (currentTile)
             {
                 currentTile.isOccupied = false;
+                Debug.Log(currentTile.name + " unoccupied");
             }
 
             currentTile = FindAnyObjectByType<Locations>().GetStartTile();
             transform.position = currentTile.transform.position;
             currentTile.isOccupied = true;
+            Debug.Log(currentTile.name + " ccupied");
             Debug.Log("start");
             isAlive = true;
 
@@ -102,11 +128,13 @@ public class Snake : MonoBehaviour
 
     public void Move()
     {
-       
+      
+
         if (moveInProgress)
         {
             return;
         }
+        currentMovingDirection = desiredDirection;
         moveInProgress = true;
         if (isAlive) { 
             if (currentTile)
@@ -170,7 +198,8 @@ public class Snake : MonoBehaviour
 
     private void HandleMovement(Tile newTile)
     {
-      
+        //this is here so that we dont update direction in the middle of a move.
+        
 
         if (newTile.isOccupied)
         {
@@ -192,31 +221,50 @@ public class Snake : MonoBehaviour
             ////start at the rear: move to equal the position of the next,
             //when we reach the front, move based on current direction.
             //
+
+            
             if (snakeBody.Count > 0)
             {
 
                 for (int i = snakeBody.Count - 1; i >= 0; i--)
                 {
+                    Debug.Log("moving body: "+ i+ " for :"+snakeBody[i].name);
                     //first element iwil follow snake head, so move that last. 
                     if (i == 0)
                     {
                         snakeBody[i].gameObject.transform.position = currentTile.transform.position;
                         snakeBody[i].currentTile = currentTile;
+                        snakeBody[i].currentTile.isOccupied = true;
+                        Debug.Log(currentTile.name + " occupied");
+
                     }
-                    else
+                    else if (i== snakeBody.Count - 1)
                     {
-                        
-                        
-                        //if the tail, set current tile to unoccupied
-                        if (i == snakeBody.Count - 1)
-                        {
-                            snakeBody[i].currentTile.isOccupied = false;
-                        }
+                        //if we are the tail, release our tile from being occupied.
+                        snakeBody[i].currentTile.isOccupied = false;
+                        Debug.Log(currentTile.name + " unoccupied");
                         //get the snakebody ahead of it, and it move to that location to move like a "train"
                         snakeBody[i].transform.position = snakeBody[i - 1].transform.position;
 
                         //set current tile to the next body elements tile.
                         snakeBody[i].currentTile = snakeBody[i - 1].currentTile;
+
+                        //set current tile ot occupied
+                        snakeBody[i].currentTile.isOccupied = true;
+                        Debug.Log(currentTile.name + " occupied");
+                    }
+                    else
+                    {
+                       
+                        //get the snakebody ahead of it, and it move to that location to move like a "train"
+                        snakeBody[i].transform.position = snakeBody[i - 1].transform.position;
+
+                        //set current tile to the next body elements tile.
+                        snakeBody[i].currentTile = snakeBody[i - 1].currentTile;
+
+                        //set current tile ot occupied
+                        snakeBody[i].currentTile.isOccupied = true;
+                        Debug.Log(currentTile.name + " occupied");
 
                     }
                 }
@@ -225,19 +273,27 @@ public class Snake : MonoBehaviour
             {
                 //if we have no body, set the old tile to unoccupied first
                 currentTile.isOccupied = false;
+                Debug.Log(currentTile.name + " unoccupied");
             }
 
             //then move snake head
             currentTile = newTile;
+            currentTile.isOccupied = true;
             transform.position = currentTile.transform.position;
-
+            Debug.Log("moving head");
         }
+
+
+
+        
+
     }
 
     public void ChangeDirection(direction newDirection)
     {
         //set current direction to desired direction
-        currentMovingDirection = newDirection;
+       // currentMovingDirection = newDirection;
+        desiredDirection = newDirection;
         Debug.Log("changed direction");
     }
     
