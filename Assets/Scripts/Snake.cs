@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using static Enum_Direction;
@@ -15,6 +16,8 @@ public class Snake : MonoBehaviour
     [SerializeField]
     Snake_Body snakeBodyPrefab;
 
+    public int aiDifficulty = 1;
+
 
     //Movement
     direction currentMovingDirection = direction.down;
@@ -22,7 +25,6 @@ public class Snake : MonoBehaviour
     bool CanMove = true;
     Tile currentTile;
     public bool moveInProgress = false;
-
 
     //Status
     public bool isAlive = false;
@@ -34,7 +36,6 @@ public class Snake : MonoBehaviour
 
     public List<Snake_Body> snakeBody = new List<Snake_Body>();
     public List<Tile> path;
-
 
     private void Start()
     {
@@ -65,13 +66,11 @@ public class Snake : MonoBehaviour
 
     IEnumerator HandleMove()
     {
-       
         CanMove = false;
         yield return new WaitForSeconds(timeBetweenMoves);
         if (isAiControlled)
         {
             AIMove();
-
         }
         else
         {
@@ -79,147 +78,19 @@ public class Snake : MonoBehaviour
         }
         CanMove = true;
         location.Fixup();
-        
     }
 
-    private void AIMove()
-    {
-        if (moveInProgress)
-        {
-            return;
-        }
-
-
-        if (path.Count <= 0)
-        {
-            GetNewAIPath();
-            return;
-
-        }
-
-
-        //find out what direction to go for the next Djikstra path
-
-        moveInProgress = true;
-
-        
-        
-        if(currentTile.tile_down == path[0])
-        {
-
-            UnityEngine.Color hexColor;
-            UnityEngine.ColorUtility.TryParseHtmlString("#785757", out hexColor);
-            path[0].GetComponent<SpriteRenderer>().color = hexColor;
-            path.Remove(path[0]);
-
-            HandleMovement(currentTile.tile_down);
-            moveInProgress = false;
-            return;
-        }
-        else if(currentTile.tile_left == path[0])
-        {
-            UnityEngine.Color hexColor;
-            UnityEngine.ColorUtility.TryParseHtmlString("#785757", out hexColor);
-            path[0].GetComponent<SpriteRenderer>().color = hexColor;
-            path.Remove(path[0]);
-            HandleMovement(currentTile.tile_left);
-            moveInProgress = false;
-            return;
-        }
-        else if(currentTile.tile_right == path[0])
-        {
-            UnityEngine.Color hexColor;
-            UnityEngine.ColorUtility.TryParseHtmlString("#785757", out hexColor);
-            path[0].GetComponent<SpriteRenderer>().color = hexColor;
-            path.Remove(path[0]);
-            HandleMovement(currentTile.tile_right);
-            moveInProgress = false;
-            return;
-
-        }
-        else if(currentTile.tile_up == path[0])
-        {
-            UnityEngine.Color hexColor;
-            UnityEngine.ColorUtility.TryParseHtmlString("#785757", out hexColor);
-            path[0].GetComponent<SpriteRenderer>().color = hexColor;
-            path.Remove(path[0]);
-            HandleMovement(currentTile.tile_up);
-            moveInProgress = false;
-            return;
-        }
-        else
-        {
-            Debug.LogError("no current tile or no path");
-            moveInProgress = false;
-            return;
-        }
-         
-
-
-        
-    }
-
-    public void Grow()
-    {
-        Debug.Log("growing");
-        Snake_Body newBody = GameObject.Instantiate(snakeBodyPrefab);
-        
-        //set new body part to the location we are currently at
-        snakeBody.Add(newBody);
-        newBody.transform.position = transform.position;
-        newBody.currentTile = currentTile;
-        newBody.currentTile.isOccupied = true;
-        //create new snake body
-        //add to snake body list
-
-
-       
-
-    }
-
-    public void Die()
-    {
-        if (controller)
-        {
-            controller.Die();
-        }
-    }
-
-    public void StartPlayer()
-    {
-        if (!isAlive)
-        {
-            if (currentTile)
-            {
-                currentTile.isOccupied = false;
-            }
-
-            currentTile = FindAnyObjectByType<Locations>().GetStartTile();
-            transform.position = currentTile.transform.position;
-            currentTile.isOccupied = true;
-            isAlive = true;
-
-
-            // move all foods to different tiles
-            foreach(var f in FindObjectsOfType<Food>())
-            {
-                f.MoveToNewTile();
-            }
-
-        }
-    }
-
+    //handles movement logic for player 
     public void Move()
     {
-      
-
         if (moveInProgress)
         {
             return;
         }
         currentMovingDirection = desiredDirection;
         moveInProgress = true;
-        if (isAlive) { 
+        if (isAlive)
+        {
             if (currentTile)
             {
                 switch (currentMovingDirection)
@@ -272,16 +143,81 @@ public class Snake : MonoBehaviour
                 return;
             }
         }
-
-        
         moveInProgress = false;
     }
+    //handles movement logic for AI
+    private void AIMove()
+    {
+        if (moveInProgress)
+        {
+            return;
+        }
 
+        if (aiDifficulty == 3) { 
+            GetNewAIPath();
+        }
+        
+
+        //find out what direction to go for the next Djikstra path
+        moveInProgress = true;
+
+        
+        if(currentTile.tile_down == path[0])
+        {
+            UnityEngine.Color hexColor;
+            UnityEngine.ColorUtility.TryParseHtmlString("#785757", out hexColor);
+            path[0].GetComponent<SpriteRenderer>().color = hexColor;
+            path.Remove(path[0]);
+            HandleMovement(currentTile.tile_down);
+            moveInProgress = false;
+            return;
+        }
+        else if(currentTile.tile_left == path[0])
+        {
+            UnityEngine.Color hexColor;
+            UnityEngine.ColorUtility.TryParseHtmlString("#785757", out hexColor);
+            path[0].GetComponent<SpriteRenderer>().color = hexColor;
+            path.Remove(path[0]);
+            HandleMovement(currentTile.tile_left);
+            moveInProgress = false;
+            return;
+        }
+        else if(currentTile.tile_right == path[0])
+        {
+            UnityEngine.Color hexColor;
+            UnityEngine.ColorUtility.TryParseHtmlString("#785757", out hexColor);
+            path[0].GetComponent<SpriteRenderer>().color = hexColor;
+            path.Remove(path[0]);
+            HandleMovement(currentTile.tile_right);
+            moveInProgress = false;
+            return;
+
+        }
+        else if(currentTile.tile_up == path[0])
+        {
+            UnityEngine.Color hexColor;
+            UnityEngine.ColorUtility.TryParseHtmlString("#785757", out hexColor);
+            path[0].GetComponent<SpriteRenderer>().color = hexColor;
+            path.Remove(path[0]);
+            HandleMovement(currentTile.tile_up);
+            moveInProgress = false;
+            return;
+        }
+        else
+        {
+            Debug.LogError("no current tile or no path");
+            moveInProgress = false;
+            return;
+        }
+    }
+
+
+ 
+    
+    //This is the step where movement actually gets executed
     private void HandleMovement(Tile newTile)
     {
         //this is here so that we dont update direction in the middle of a move.
-        
-
         if (newTile.isOccupied)
         {
             Die();
@@ -295,36 +231,30 @@ public class Snake : MonoBehaviour
                 newTile.ClearFood();
                 //become larger
                 Grow();
-
             }
-
 
             //then move
             ////start at the rear: move to equal the position of the next,
             //when we reach the front, move based on current direction.
-            //
-
-            
+            //            
             if (snakeBody.Count > 0)
             {
-
                 for (int i = snakeBody.Count - 1; i >= 0; i--)
                 {
-                    Debug.Log("moving body: "+ i+ " for :"+snakeBody[i].name);
-                    //first element iwil follow snake head, so move that last. 
+                    //Debug.Log("moving body: "+ i+ " for :"+snakeBody[i].name);
+                    //first element will follow snake head, so move that last. 
                     if (i == 0)
                     {
                         snakeBody[i].gameObject.transform.position = currentTile.transform.position;
                         snakeBody[i].currentTile = currentTile;
                         snakeBody[i].currentTile.isOccupied = true;
-                        Debug.Log(currentTile.name + " occupied");
-
+                       // Debug.Log(currentTile.name + " occupied");
                     }
                     else if (i== snakeBody.Count - 1)
                     {
                         //if we are the tail, release our tile from being occupied.
                         snakeBody[i].currentTile.isOccupied = false;
-                        Debug.Log(currentTile.name + " unoccupied");
+                       //Debug.Log(currentTile.name + " unoccupied");
                         //get the snakebody ahead of it, and it move to that location to move like a "train"
                         snakeBody[i].transform.position = snakeBody[i - 1].transform.position;
 
@@ -333,7 +263,7 @@ public class Snake : MonoBehaviour
 
                         //set current tile ot occupied
                         snakeBody[i].currentTile.isOccupied = true;
-                        Debug.Log(currentTile.name + " occupied");
+                       // Debug.Log(currentTile.name + " occupied");
                     }
                     else
                     {
@@ -346,7 +276,7 @@ public class Snake : MonoBehaviour
 
                         //set current tile ot occupied
                         snakeBody[i].currentTile.isOccupied = true;
-                        Debug.Log(currentTile.name + " occupied");
+                       // Debug.Log(currentTile.name + " occupied");
 
                     }
                 }
@@ -355,14 +285,14 @@ public class Snake : MonoBehaviour
             {
                 //if we have no body, set the old tile to unoccupied first
                 currentTile.isOccupied = false;
-                Debug.Log(currentTile.name + " unoccupied");
+                //Debug.Log(currentTile.name + " unoccupied");
             }
 
             //then move snake head
             currentTile = newTile;
             currentTile.isOccupied = true;
             transform.position = currentTile.transform.position;
-            Debug.Log("moving head");
+           // Debug.Log("moving head");
         }
 
 
@@ -370,11 +300,21 @@ public class Snake : MonoBehaviour
 
     private void GetNewAIPath()
     {
+        //first clear out the old path
+        UnityEngine.Color hexColor;
+        UnityEngine.ColorUtility.TryParseHtmlString("#785757", out hexColor);
+        foreach (var tile in path)
+        {
+            //color first element as its been traversed
+            tile.GetComponent<SpriteRenderer>().color = hexColor;
+        }
+
+        path.Clear();
+
         path = location.GetTilePathViaDjikstra(currentTile, FindObjectOfType<Food>().GetCurrentTile());
 
         //color first element as its been traversed
-        UnityEngine.Color hexColor;
-        UnityEngine.ColorUtility.TryParseHtmlString("#785757", out hexColor);
+
         path[0].GetComponent<SpriteRenderer>().color = hexColor;
         //remove first element as its where we started
         path.Remove(path[0]);
@@ -387,12 +327,7 @@ public class Snake : MonoBehaviour
 
     public void ChangeDirection(direction newDirection)
     {
-        //set current direction to desired direction
-        // currentMovingDirection = newDirection;
-
-
         desiredDirection = newDirection;
-        Debug.Log("changed direction");
     }
 
     public direction GetCurrentDirection()
@@ -400,26 +335,73 @@ public class Snake : MonoBehaviour
         return currentMovingDirection;
     }
 
-   
+    public void StartPlayer()
+    {
+        if (!isAlive)
+        {
+            if (currentTile)
+            {
+                currentTile.isOccupied = false;
+            }
+
+            currentTile = FindAnyObjectByType<Locations>().GetStartTile();
+            transform.position = currentTile.transform.position;
+            currentTile.isOccupied = true;
+            isAlive = true;
+        }
+    }
 
     public void StartAI()
     {
         if (isAiControlled)
         {
-            currentTile = currentTile = FindAnyObjectByType<Locations>().GetStartTile(); 
+            currentTile =  FindAnyObjectByType<Locations>().GetRandomUnoccupiedTile(); 
             transform.position = currentTile.transform.position;
             currentTile.isOccupied = true;
             isAlive = true;
-            
-            // move all foods to different tiles
-            foreach (var f in FindObjectsOfType<Food>())
-            {
-                f.MoveToNewTile();
-            }
-
+            //generate initial path
             GetNewAIPath();
         }
     }
 
-   
+    //handle consuming food.
+    public void Grow()
+    {
+       // Debug.Log("growing");
+        Snake_Body newBody = GameObject.Instantiate(snakeBodyPrefab);
+        //set new body part to the location we are currently at
+        snakeBody.Add(newBody);
+        newBody.transform.position = transform.position;
+        newBody.currentTile = currentTile;
+        newBody.currentTile.isOccupied = true;
+        //create new snake body
+        //add to snake body list
+    }
+
+    //handle death condition
+    public void Die()
+    {
+        if (controller)
+        {
+            //#TODO reenable this
+            controller.Die();
+        }
+        else
+        {
+            UnityEngine.Color hexColor;
+            UnityEngine.ColorUtility.TryParseHtmlString("#785757", out hexColor);
+            //unoccupy all tiles
+            foreach (var body in snakeBody)
+            {
+                body.currentTile.isOccupied = false;
+                body.currentTile.GetComponent<SpriteRenderer>().color = hexColor;
+            }
+            currentTile.isOccupied = false;
+            currentTile.GetComponent<SpriteRenderer>().color = hexColor;
+            Destroy(gameObject);
+        }
+    }
+
+
+
 }

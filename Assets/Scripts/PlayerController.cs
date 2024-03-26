@@ -40,14 +40,25 @@ public class PlayerController : MonoBehaviour
                 {
                     controlledSnake.StartPlayer();
                 }
+
+                foreach(var snake in FindObjectsOfType<Snake>())
+                {
+                    if (snake.isAiControlled)
+                    {
+                        snake.StartAI();
+                    }
+                }
+
+                //move all foods to different tiles
+                foreach (var f in FindObjectsOfType<Food>())
+                {
+                    f.MoveToNewTile();
+                }
+
                 GameOverPanel.SetActive(false);
             }
         }
-        if (controlledSnake.isAiControlled)
-        {
-           
-        }
-        else
+        if (!controlledSnake.isAiControlled)
         {
 
             if (controlledSnake)
